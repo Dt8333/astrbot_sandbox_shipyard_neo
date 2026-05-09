@@ -1,22 +1,26 @@
 {
   "shipyard_neo_endpoint": {
-    "description": "Shipyard Neo API Endpoint",
+    "description": "Shipyard Neo API 地址",
     "type": "string",
-    "hint": "Shipyard Neo(Bay) API endpoint. Default: http://127.0.0.1:8114."
+    "default": "",
+    "hint": "Bay / Shipyard Neo 服务的 API 地址。"
   },
   "shipyard_neo_access_token": {
-    "description": "Shipyard Neo Access Token",
+    "description": "Shipyard Neo 访问令牌",
     "type": "string",
-    "hint": "Bay API key. Leave empty to auto-discover Bay credentials.json."
+    "default": "",
+    "hint": "Bay API Key。留空时会自动从 credentials.json 发现。"
   },
   "shipyard_neo_profile": {
     "description": "Shipyard Neo Profile",
     "type": "string",
-    "hint": "Shipyard Neo sandbox profile, for example python-default."
+    "default": "python-default",
+    "hint": "Shipyard Neo 沙箱 profile，例如 python-default。"
   },
   "shipyard_neo_ttl": {
-    "description": "Shipyard Neo Sandbox TTL",
+    "description": "Shipyard Neo 沙箱存活时间",
     "type": "int",
-    "hint": "Shipyard Neo sandbox TTL in seconds."
+    "default": 3600,
+    "hint": "Shipyard Neo 沙箱的生存时间，单位为秒。默认值为 3600。"
   }
 }

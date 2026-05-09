@@ -18,7 +18,7 @@ It targets Bay / Shipyard Neo workflows and adds browser automation plus Neo ski
 ## Requirements
 
 - An AstrBot build that supports external sandbox provider plugins.
-- The Python dependency from `requirements.txt`: `shipyard`.
+- The Python dependency from `requirements.txt`: `shipyard-neo-sdk`.
 - A running Bay / Shipyard Neo service.
 - A valid Bay API key, unless it can be auto-discovered.
 

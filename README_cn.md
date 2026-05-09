@@ -18,7 +18,7 @@
 ## 依赖要求
 
 - 需要使用已经支持外部 sandbox provider 插件的 AstrBot 版本。
-- 依赖 `requirements.txt` 中的 `shipyard`。
+- 依赖 `requirements.txt` 中的 `shipyard-neo-sdk`。
 - 需要已经运行的 Bay / Shipyard Neo 服务。
 - 需要有效的 Bay API Key，或者能被自动发现。
 
