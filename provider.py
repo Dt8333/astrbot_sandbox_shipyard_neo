@@ -38,6 +38,7 @@ def _discover_bay_credentials(endpoint: str) -> str:
 class ShipyardNeoSandboxProvider:
     provider_id = "shipyard_neo"
     capabilities = {"shell", "python", "filesystem", "browser"}
+    supports_persistent_reconnect = True
     tool_names = {
         "astrbot_execute_browser",
         "astrbot_execute_browser_batch",
@@ -98,6 +99,8 @@ class ShipyardNeoSandboxProvider:
             "name": sandbox_name,
             "endpoint_url": config.get("endpoint_url"),
             "profile": config.get("profile"),
+            "persistent_name": config.get("persistent_name") or sandbox_name,
+            "sandbox_id": config.get("sandbox_id"),
         }
 
     def update_connect_info(self, record: dict, *, sandbox_name: str) -> dict:
@@ -113,8 +116,15 @@ class ShipyardNeoSandboxProvider:
     ) -> ComputerBooter:
         if self._boot_hook is not None:
             return await self._boot_hook(context, session_id, sandbox_id, config)
-        client = ShipyardNeoBooter(**config)
+        client = ShipyardNeoBooter(
+            **config,
+            persistent=True,
+            persistent_name=str(config.get("persistent_name") or sandbox_id).strip(),
+            resume=bool(config.get("resume", False)),
+            existing_sandbox_id=config.get("sandbox_id"),
+        )
         await client.boot(uuid.uuid5(uuid.NAMESPACE_DNS, session_id).hex)
+        setattr(client, "sandbox_id", sandbox_id)
         return client
 
     async def destroy_booter(self, booter: ComputerBooter, record: dict) -> None:

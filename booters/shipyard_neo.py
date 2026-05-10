@@ -355,11 +355,20 @@ class ShipyardNeoBooter(ComputerBooter):
         access_token: str,
         profile: str = DEFAULT_PROFILE,
         ttl: int = 3600,
+        *,
+        persistent: bool = False,
+        persistent_name: str | None = None,
+        resume: bool = False,
+        existing_sandbox_id: str | None = None,
     ) -> None:
         self._endpoint_url = endpoint_url
         self._access_token = access_token
         self._profile = profile
         self._ttl = ttl
+        self._persistent = persistent
+        self._persistent_name = persistent_name
+        self._resume = resume
+        self._existing_sandbox_id = existing_sandbox_id
         self._client: BayClient | None = None
         self._sandbox: Sandbox | None = None
         self._bay_manager: Any = None  # BayContainerManager when auto-started
@@ -431,13 +440,16 @@ class ShipyardNeoBooter(ComputerBooter):
         )
         await self._client.__aenter__()
 
-        # Resolve profile: user-specified > smart selection > default
-        resolved_profile = await self._resolve_profile(self._client)
-
-        self._sandbox = await self._client.create_sandbox(
-            profile=resolved_profile,
-            ttl=self._ttl,
-        )
+        if self._resume and self._existing_sandbox_id:
+            self._sandbox = await self._client.get_sandbox(self._existing_sandbox_id)
+            resolved_profile = self._sandbox.profile
+        else:
+            # Resolve profile: user-specified > smart selection > default
+            resolved_profile = await self._resolve_profile(self._client)
+            self._sandbox = await self._client.create_sandbox(
+                profile=resolved_profile,
+                ttl=self._ttl,
+            )
 
         # --- Readiness gate: wait until sandbox session is READY ---
         await self._wait_until_ready(self._sandbox)
@@ -452,11 +464,13 @@ class ShipyardNeoBooter(ComputerBooter):
         )
 
         logger.info(
-            "Got Shipyard Neo sandbox: %s (profile=%s, capabilities=%s, auto=%s)",
+            "Got Shipyard Neo sandbox: %s (profile=%s, capabilities=%s, auto=%s, persistent=%s, resume=%s)",
             self._sandbox.id,
             resolved_profile,
             list(caps),
             bool(self._bay_manager),
+            self._persistent,
+            self._resume,
         )
 
     async def _wait_until_ready(self, sandbox: Sandbox) -> None:
