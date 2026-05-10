@@ -251,6 +251,47 @@ async def test_shipyard_neo_auto_mode_generates_token_for_bay_and_client(monkeyp
     }
 
 
+def test_shipyard_neo_provider_does_not_discover_credentials_for_auto_endpoint(
+    monkeypatch,
+):
+    def fail_discovery(endpoint: str):
+        raise AssertionError(f"should not discover credentials for {endpoint}")
+
+    monkeypatch.setattr(provider_module, "_discover_bay_credentials", fail_discovery)
+
+    provider = provider_module.ShipyardNeoSandboxProvider()
+    context = SimpleNamespace(
+        get_config=lambda umo: {"provider_settings": {"sandbox": {}}}
+    )
+
+    config = provider.build_create_config(context, "dashboard")
+
+    assert config["endpoint_url"] == provider_module.DEFAULT_SHIPYARD_NEO_ENDPOINT
+    assert config["access_token"] == ""
+
+
+def test_bay_manager_omits_empty_api_key_env():
+    from data.plugins.astrbot_sandbox_shipyard_neo.booters.bay_manager import (
+        BayContainerManager,
+    )
+
+    manager = BayContainerManager(access_token="")
+
+    assert all(
+        env != "BAY_SECURITY__API_KEY=" for env in manager._build_container_env()
+    )
+
+
+def test_bay_manager_includes_api_key_env_when_token_is_configured():
+    from data.plugins.astrbot_sandbox_shipyard_neo.booters.bay_manager import (
+        BayContainerManager,
+    )
+
+    manager = BayContainerManager(access_token="token")
+
+    assert "BAY_SECURITY__API_KEY=token" in manager._build_container_env()
+
+
 @pytest.mark.asyncio
 async def test_shipyard_neo_provider_reports_persistent_sandbox_exists(monkeypatch):
     calls = []

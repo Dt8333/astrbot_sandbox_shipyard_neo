@@ -89,7 +89,7 @@ class ShipyardNeoSandboxProvider:
         if not endpoint:
             endpoint = DEFAULT_SHIPYARD_NEO_ENDPOINT
         token = merged.get("shipyard_neo_access_token", "")
-        if not token:
+        if not token and endpoint != DEFAULT_SHIPYARD_NEO_ENDPOINT:
             token = _discover_bay_credentials(endpoint)
         return {
             "endpoint_url": endpoint,
