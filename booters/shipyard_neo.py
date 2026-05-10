@@ -360,6 +360,7 @@ class ShipyardNeoBooter(ComputerBooter):
         persistent_name: str | None = None,
         resume: bool = False,
         existing_sandbox_id: str | None = None,
+        sandbox_id: str | None = None,
     ) -> None:
         self._endpoint_url = endpoint_url
         self._access_token = access_token
@@ -369,6 +370,7 @@ class ShipyardNeoBooter(ComputerBooter):
         self._persistent_name = persistent_name
         self._resume = resume
         self._existing_sandbox_id = existing_sandbox_id
+        self.sandbox_id = sandbox_id
         self._client: BayClient | None = None
         self._sandbox: Sandbox | None = None
         self._bay_manager: Any = None  # BayContainerManager when auto-started
@@ -441,8 +443,22 @@ class ShipyardNeoBooter(ComputerBooter):
         await self._client.__aenter__()
 
         if self._resume and self._existing_sandbox_id:
-            self._sandbox = await self._client.get_sandbox(self._existing_sandbox_id)
-            resolved_profile = self._sandbox.profile
+            from shipyard_neo.errors import NotFoundError, SandboxExpiredError
+
+            try:
+                self._sandbox = await self._client.get_sandbox(self._existing_sandbox_id)
+                resolved_profile = self._sandbox.profile
+            except (NotFoundError, SandboxExpiredError) as exc:
+                logger.info(
+                    "[Computer] Shipyard Neo resume target unavailable; creating a new sandbox instead: sandbox_id=%s error=%s",
+                    self._existing_sandbox_id,
+                    exc,
+                )
+                resolved_profile = await self._resolve_profile(self._client)
+                self._sandbox = await self._client.create_sandbox(
+                    profile=resolved_profile,
+                    ttl=self._ttl,
+                )
         else:
             if self._resume and not self._existing_sandbox_id:
                 logger.info(

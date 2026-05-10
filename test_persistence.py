@@ -7,7 +7,9 @@ from data.plugins.astrbot_sandbox_shipyard_neo import provider as provider_modul
 
 def test_shipyard_neo_provider_connect_info_tracks_sandbox_id():
     provider = provider_module.ShipyardNeoSandboxProvider()
-    assert provider_module.ShipyardNeoSandboxProvider.supports_persistent_reconnect is True
+    assert (
+        provider_module.ShipyardNeoSandboxProvider.supports_persistent_reconnect is True
+    )
 
     info = provider.build_connect_info(
         "Named",
@@ -23,6 +25,18 @@ def test_shipyard_neo_provider_connect_info_tracks_sandbox_id():
     assert info["sandbox_id"] == "sbx_123"
 
 
+def test_shipyard_neo_provider_update_connect_info_populates_legacy_persistent_name():
+    provider = provider_module.ShipyardNeoSandboxProvider()
+
+    updated = provider.update_connect_info(
+        {"connect_info": {"name": "Legacy"}},
+        sandbox_name="Renamed",
+    )
+
+    assert updated["name"] == "Renamed"
+    assert updated["persistent_name"] == "Renamed"
+
+
 @pytest.mark.asyncio
 async def test_shipyard_neo_provider_passes_reconnect_metadata(monkeypatch):
     recorded = {}
@@ -30,6 +44,7 @@ async def test_shipyard_neo_provider_passes_reconnect_metadata(monkeypatch):
     class FakeBooter:
         def __init__(self, **kwargs):
             recorded.update(kwargs)
+            self.sandbox_id = kwargs.get("sandbox_id")
 
         async def boot(self, session_id: str):
             recorded["boot_session_id"] = session_id
@@ -52,6 +67,7 @@ async def test_shipyard_neo_provider_passes_reconnect_metadata(monkeypatch):
     assert recorded["persistent"] is True
     assert recorded["persistent_name"] == "neo-1"
     assert recorded["resume"] is False
+    assert recorded["sandbox_id"] == "neo-1"
     assert getattr(booter, "sandbox_id") == "neo-1"
 
 
@@ -90,3 +106,60 @@ async def test_shipyard_neo_provider_uses_config_overrides_without_keyword_confl
     assert recorded["persistent_name"] == "neo-custom"
     assert recorded["resume"] is True
     assert recorded["existing_sandbox_id"] == "sbx_existing"
+
+
+@pytest.mark.asyncio
+async def test_shipyard_neo_booter_resume_falls_back_when_sandbox_missing(monkeypatch):
+    from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo import (
+        ShipyardNeoBooter,
+    )
+    from shipyard_neo.errors import NotFoundError
+
+    recorded = []
+
+    class FakeSandbox:
+        def __init__(self, sandbox_id: str, profile: str = "python-default"):
+            self.id = sandbox_id
+            self.profile = profile
+            self.capabilities = ["browser"]
+            self.status = SimpleNamespace(value="ready")
+            self.shell = SimpleNamespace()
+            self.filesystem = SimpleNamespace()
+            self.python = SimpleNamespace()
+            self.browser = SimpleNamespace()
+
+        async def refresh(self):
+            return None
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def get_sandbox(self, sandbox_id: str):
+            raise NotFoundError()
+
+        async def create_sandbox(self, *, profile: str, ttl: int):
+            recorded.append(("create", profile, ttl))
+            return FakeSandbox("new_sbx", profile)
+
+    monkeypatch.setattr(
+        "data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo.BayClient",
+        lambda **kwargs: FakeClient(),
+    )
+
+    async def fake_resolve_profile(self, client):
+        return "python-default"
+
+    monkeypatch.setattr(ShipyardNeoBooter, "_resolve_profile", fake_resolve_profile)
+
+    booter = ShipyardNeoBooter(
+        endpoint_url="https://example.com",
+        access_token="token",
+        resume=True,
+        existing_sandbox_id="stale_sbx",
+        sandbox_id="neo-1",
+    )
+
+    await booter.boot("ignored")
+
+    assert recorded == [("create", "python-default", 3600)]
