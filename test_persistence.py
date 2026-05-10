@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from data.plugins.astrbot_sandbox_shipyard_neo import main as plugin_main
 from data.plugins.astrbot_sandbox_shipyard_neo import provider as provider_module
 from data.plugins.astrbot_sandbox_shipyard_neo.booters import shipyard_neo
 from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo import (
@@ -48,6 +49,34 @@ def test_shipyard_neo_provider_connect_info_tracks_sandbox_id():
 
     assert info["persistent_name"] == "neo-1"
     assert info["sandbox_id"] == "sbx_123"
+
+
+@pytest.mark.asyncio
+async def test_shipyard_neo_terminate_detaches_even_if_cleanup_fails(monkeypatch):
+    calls = []
+
+    class FakeProvider:
+        provider_id = "shipyard_neo"
+
+    async def fake_cleanup(provider_id):
+        calls.append(("cleanup", provider_id))
+        raise RuntimeError("cleanup failed")
+
+    def fake_detach(provider_id):
+        calls.append(("detach", provider_id))
+
+    monkeypatch.setattr(plugin_main, "cleanup_sandbox_provider", fake_cleanup)
+    monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
+
+    plugin = plugin_main.ShipyardNeoSandboxRuntimePlugin.__new__(
+        plugin_main.ShipyardNeoSandboxRuntimePlugin
+    )
+    plugin.provider = FakeProvider()
+
+    with pytest.raises(RuntimeError, match="cleanup failed"):
+        await plugin.terminate()
+
+    assert calls == [("cleanup", "shipyard_neo"), ("detach", "shipyard_neo")]
 
 
 def test_shipyard_neo_provider_update_connect_info_populates_legacy_persistent_name():
