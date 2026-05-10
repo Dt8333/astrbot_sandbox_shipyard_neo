@@ -38,6 +38,7 @@ def _discover_bay_credentials(endpoint: str) -> str:
 class ShipyardNeoSandboxProvider:
     provider_id = "shipyard_neo"
     capabilities = {"shell", "python", "filesystem", "browser"}
+    supports_persistent_reconnect = True
     tool_names = {
         "astrbot_execute_browser",
         "astrbot_execute_browser_batch",
@@ -98,11 +99,16 @@ class ShipyardNeoSandboxProvider:
             "name": sandbox_name,
             "endpoint_url": config.get("endpoint_url"),
             "profile": config.get("profile"),
+            "persistent_name": config.get("persistent_name") or sandbox_name,
+            "sandbox_id": config.get("sandbox_id"),
         }
 
     def update_connect_info(self, record: dict, *, sandbox_name: str) -> dict:
         connect_info = dict(record.get("connect_info") or {})
         connect_info["name"] = sandbox_name
+        connect_info["persistent_name"] = (
+            connect_info.get("persistent_name") or sandbox_name
+        )
         return connect_info
 
     def get_idle_timeout(self, context: Context, session_id: str) -> float:
@@ -113,7 +119,17 @@ class ShipyardNeoSandboxProvider:
     ) -> ComputerBooter:
         if self._boot_hook is not None:
             return await self._boot_hook(context, session_id, sandbox_id, config)
-        client = ShipyardNeoBooter(**config)
+        booter_config = {
+            **{key: value for key, value in config.items() if key != "sandbox_id"},
+            "persistent": True,
+            "persistent_name": str(config.get("persistent_name") or sandbox_id).strip(),
+            "resume": bool(config.get("resume", False)),
+            "existing_sandbox_id": config.get("sandbox_id"),
+            "sandbox_id": sandbox_id,
+        }
+        client = ShipyardNeoBooter(
+            **booter_config,
+        )
         await client.boot(uuid.uuid5(uuid.NAMESPACE_DNS, session_id).hex)
         return client
 
