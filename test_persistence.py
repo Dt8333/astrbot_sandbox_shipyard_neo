@@ -37,6 +37,23 @@ def test_shipyard_neo_provider_update_connect_info_populates_legacy_persistent_n
     assert updated["persistent_name"] == "Renamed"
 
 
+def test_shipyard_neo_provider_update_connect_info_preserves_existing_persistent_name():
+    provider = provider_module.ShipyardNeoSandboxProvider()
+
+    updated = provider.update_connect_info(
+        {
+            "connect_info": {
+                "name": "Legacy",
+                "persistent_name": "Original",
+            }
+        },
+        sandbox_name="Renamed",
+    )
+
+    assert updated["name"] == "Renamed"
+    assert updated["persistent_name"] == "Original"
+
+
 @pytest.mark.asyncio
 async def test_shipyard_neo_provider_passes_reconnect_metadata(monkeypatch):
     recorded = {}
@@ -68,6 +85,8 @@ async def test_shipyard_neo_provider_passes_reconnect_metadata(monkeypatch):
     assert recorded["persistent_name"] == "neo-1"
     assert recorded["resume"] is False
     assert recorded["sandbox_id"] == "neo-1"
+    for key in ("ttl", "endpoint_url", "profile"):
+        assert key in recorded
     assert getattr(booter, "sandbox_id") == "neo-1"
 
 
