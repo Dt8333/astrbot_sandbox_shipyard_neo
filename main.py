@@ -5,22 +5,6 @@ from astrbot.core.computer.computer_client import (
 )
 
 from .provider import ShipyardNeoSandboxProvider
-from .tools.shipyard_neo import (
-    AnnotateExecutionTool,
-    BrowserBatchExecTool,
-    BrowserExecTool,
-    CreateSkillCandidateTool,
-    CreateSkillPayloadTool,
-    EvaluateSkillCandidateTool,
-    GetExecutionHistoryTool,
-    GetSkillPayloadTool,
-    ListSkillCandidatesTool,
-    ListSkillReleasesTool,
-    PromoteSkillCandidateTool,
-    RollbackSkillReleaseTool,
-    RunBrowserSkillTool,
-    SyncSkillReleaseTool,
-)
 
 
 @register(
@@ -36,22 +20,6 @@ class ShipyardNeoSandboxRuntimePlugin(Star):
         register_sandbox_provider(
             self.provider,
             replace=True,
-            tools=[
-                BrowserExecTool(),
-                BrowserBatchExecTool(),
-                RunBrowserSkillTool(),
-                GetExecutionHistoryTool(),
-                AnnotateExecutionTool(),
-                CreateSkillPayloadTool(),
-                GetSkillPayloadTool(),
-                CreateSkillCandidateTool(),
-                ListSkillCandidatesTool(),
-                EvaluateSkillCandidateTool(),
-                PromoteSkillCandidateTool(),
-                ListSkillReleasesTool(),
-                RollbackSkillReleaseTool(),
-                SyncSkillReleaseTool(),
-            ],
         )
 
     async def terminate(self) -> None:

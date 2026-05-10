@@ -110,10 +110,11 @@ async def test_shipyard_neo_provider_uses_config_overrides_without_keyword_confl
 
 @pytest.mark.asyncio
 async def test_shipyard_neo_booter_resume_falls_back_when_sandbox_missing(monkeypatch):
+    from shipyard_neo.errors import NotFoundError
+
     from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo import (
         ShipyardNeoBooter,
     )
-    from shipyard_neo.errors import NotFoundError
 
     recorded = []
 
