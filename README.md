@@ -1,28 +1,25 @@
 # astrbot_sandbox_shipyard_neo
 
-Chinese version: [`README_cn.md`](./README_cn.md)
+<div align="center">
 
-`astrbot_sandbox_shipyard_neo` is an AstrBot sandbox runtime plugin that adds the `shipyard_neo` provider.
+English ｜ <a href="./README_cn.md">简体中文</a>
 
-It targets Bay / Shipyard Neo workflows and adds browser automation plus Neo skill lifecycle tools.
+</div>
 
-## Features
+`astrbot_sandbox_shipyard_neo` is the Shipyard Neo sandbox driver plugin for AstrBot, and the recommended remote sandbox option. It targets Bay / Shipyard Neo deployments and adds browser automation plus Neo Skill lifecycle tools on top of shell, Python, and file operations.
 
-- Provides the `shipyard_neo` sandbox runtime for AstrBot.
-- Supports shell, Python, filesystem, and browser capabilities.
-- Registers browser automation tools automatically.
-- Registers Neo skill lifecycle tools automatically.
-- Syncs local AstrBot skills into the sandbox when the sandbox boots.
-- Supports automatic Bay credential discovery from `credentials.json`.
+## Key Features
 
-## Requirements
+1. 🛡️ Provides the `shipyard_neo` sandbox driver for AstrBot.
+2. 💻 Supports shell, Python, file operations, and browser capabilities.
+3. 🌐 Registers browser automation tools automatically.
+4. 🧩 Registers Neo Skill lifecycle tools automatically.
+5. 📦 Syncs local AstrBot Skills when the sandbox boots.
+6. 🔑 Supports automatic Bay credential discovery from `credentials.json`.
 
-- An AstrBot build that supports external sandbox provider plugins.
-- The Python dependency from `requirements.txt`: `shipyard-neo-sdk`.
-- A running Bay / Shipyard Neo service.
-- A valid Bay API key, unless it can be auto-discovered.
+## Quick Start
 
-## Installation
+### Install the Plugin
 
 Clone the plugin into AstrBot's plugin directory:
 
@@ -30,11 +27,11 @@ Clone the plugin into AstrBot's plugin directory:
 git clone https://github.com/zouyonghe/astrbot_sandbox_shipyard_neo.git data/plugins/astrbot_sandbox_shipyard_neo
 ```
 
-Then restart AstrBot or reload plugins.
+Then restart AstrBot, or reload plugins from the plugin management page.
 
-## Configuration
+### Enable the Shipyard Neo Sandbox Driver
 
-Enable sandbox runtime in AstrBot and select this provider:
+Enable sandbox mode in AstrBot and select the `shipyard_neo` sandbox driver:
 
 ```json
 {
@@ -47,7 +44,7 @@ Enable sandbox runtime in AstrBot and select this provider:
 }
 ```
 
-Provider-specific options:
+## Configuration
 
 | Key | Description |
 | --- | --- |
@@ -61,18 +58,22 @@ Credential auto-discovery checks:
 - `$BAY_DATA_DIR/credentials.json`
 - `./credentials.json`
 
-## Usage Notes
+## Best For
 
-- This plugin is the best fit when you need browser execution inside the sandbox.
-- It also exposes Neo-oriented skill lifecycle tools such as payload, candidate, release, rollback, and sync operations.
+- Use this plugin when you need browser automation inside the sandbox.
+- It also exposes Neo Skill lifecycle tools such as payload, candidate, release, rollback, and sync operations.
 - Browser capability depends on the selected profile. A profile without browser support will not provide full browser behavior even though the plugin is installed.
 - Managed sandbox cleanup uses `delete_sandbox=True` during teardown.
 
-## Limitations
+## Requirements and Limitations
 
+- AstrBot must support external sandbox driver plugins.
+- The Python dependency from `requirements.txt`: `shipyard-neo-sdk`.
+- A working Bay / Shipyard Neo service is required.
+- A valid Bay API key is required unless it can be auto-discovered.
 - This plugin depends on a working Bay / Shipyard Neo deployment.
 - Browser behavior depends on the selected profile and upstream runtime support.
-- The plugin is more specialized than the classic Shipyard runtime and may be unnecessary if you only need shell or file operations.
+- If you only need shell or file operations, classic Shipyard or BoxLite is usually lighter.
 
 ## Repository
 
