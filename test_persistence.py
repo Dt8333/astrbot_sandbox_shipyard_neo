@@ -6,8 +6,11 @@ import pytest
 from data.plugins.astrbot_sandbox_shipyard_neo import main as plugin_main
 from data.plugins.astrbot_sandbox_shipyard_neo import provider as provider_module
 from data.plugins.astrbot_sandbox_shipyard_neo.booters import shipyard_neo
-from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo import (
+from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo_endpoint import (
+    DEFAULT_SHIPYARD_NEO_ENDPOINT,
     SHIPYARD_NEO_AUTO_ENDPOINT,
+    is_shipyard_neo_auto_endpoint,
+    normalize_shipyard_neo_endpoint,
 )
 
 
@@ -49,6 +52,77 @@ def test_shipyard_neo_provider_connect_info_tracks_sandbox_id():
 
     assert info["persistent_name"] == "neo-1"
     assert info["sandbox_id"] == "sbx_123"
+
+
+def test_shipyard_neo_provider_defaults_to_local_endpoint_when_unconfigured():
+    provider = provider_module.ShipyardNeoSandboxProvider()
+
+    config = provider.build_create_config(
+        SimpleNamespace(get_config=lambda umo: {"provider_settings": {"sandbox": {}}}),
+        "dashboard",
+    )
+
+    assert config["endpoint_url"] == DEFAULT_SHIPYARD_NEO_ENDPOINT
+    assert config["access_token"] == ""
+
+
+@pytest.mark.parametrize(
+    "endpoint_value, expected_endpoint, expected_auto",
+    [
+        ("http://localhost:8114", DEFAULT_SHIPYARD_NEO_ENDPOINT, True),
+        ("http://127.0.0.1:8114/", DEFAULT_SHIPYARD_NEO_ENDPOINT, True),
+        ("https://127.0.0.1:8114", "https://127.0.0.1:8114", False),
+        ("http://127.0.0.1:9000", "http://127.0.0.1:9000", False),
+    ],
+)
+def test_shipyard_neo_provider_normalizes_localhost_and_rejects_non_auto_endpoints(
+    endpoint_value,
+    expected_endpoint,
+    expected_auto,
+    monkeypatch,
+):
+    discovered: list[str] = []
+
+    def fake_discover(endpoint: str) -> str:
+        discovered.append(endpoint)
+        return "discovered-token"
+
+    monkeypatch.setattr(provider_module, "_discover_bay_credentials", fake_discover)
+    provider = provider_module.ShipyardNeoSandboxProvider()
+    context = SimpleNamespace(
+        get_config=lambda umo: {
+            "provider_settings": {
+                "sandbox": {
+                    "shipyard_neo_endpoint": endpoint_value,
+                }
+            }
+        }
+    )
+
+    config = provider.build_create_config(context, "dashboard")
+
+    assert config["endpoint_url"] == expected_endpoint
+    assert config["access_token"] == ("" if expected_auto else "discovered-token")
+    assert discovered == ([] if expected_auto else [expected_endpoint])
+    assert is_shipyard_neo_auto_endpoint(config["endpoint_url"]) is expected_auto
+
+
+@pytest.mark.parametrize(
+    "endpoint_value, expected_endpoint, expected_auto",
+    [
+        (None, DEFAULT_SHIPYARD_NEO_ENDPOINT, True),
+        (SHIPYARD_NEO_AUTO_ENDPOINT, DEFAULT_SHIPYARD_NEO_ENDPOINT, True),
+        (" http://localhost:8114/ ", DEFAULT_SHIPYARD_NEO_ENDPOINT, True),
+        ("http://127.0.0.1:9000", "http://127.0.0.1:9000", False),
+    ],
+)
+def test_shipyard_neo_endpoint_helper_centralizes_normalization(
+    endpoint_value, expected_endpoint, expected_auto
+):
+    normalized = normalize_shipyard_neo_endpoint(endpoint_value)
+
+    assert normalized == expected_endpoint
+    assert is_shipyard_neo_auto_endpoint(normalized) is expected_auto
 
 
 @pytest.mark.asyncio
@@ -309,6 +383,57 @@ async def test_shipyard_neo_auto_mode_generates_token_for_bay_and_client(monkeyp
 
 
 @pytest.mark.asyncio
+async def test_shipyard_neo_local_default_triggers_auto_start(monkeypatch):
+    recorded = {}
+
+    class FakeBayManager:
+        def __init__(self, *, access_token: str):
+            recorded["manager_token"] = access_token
+
+        async def ensure_running(self):
+            return "http://127.0.0.1:8114"
+
+        async def wait_healthy(self):
+            return None
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            recorded["client_kwargs"] = kwargs
+
+        async def __aenter__(self):
+            return self
+
+        async def list_profiles(self):
+            return SimpleNamespace(items=[])
+
+        async def create_sandbox(self, *, profile: str, ttl: int):
+            del profile, ttl
+            return FakeReadySandbox("sbx_local_default")
+
+    monkeypatch.setattr(
+        "data.plugins.astrbot_sandbox_shipyard_neo.booters.bay_manager.BayContainerManager",
+        FakeBayManager,
+    )
+    monkeypatch.setattr(
+        "data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo.BayClient",
+        FakeClient,
+    )
+
+    booter = shipyard_neo.ShipyardNeoBooter(
+        endpoint_url=DEFAULT_SHIPYARD_NEO_ENDPOINT,
+        access_token="",
+    )
+
+    await booter.boot("ignored")
+
+    assert recorded["manager_token"]
+    assert recorded["client_kwargs"] == {
+        "endpoint_url": "http://127.0.0.1:8114",
+        "access_token": recorded["manager_token"],
+    }
+
+
+@pytest.mark.asyncio
 async def test_shipyard_neo_auto_mode_reuses_configured_token(monkeypatch):
     from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo import (
         SHIPYARD_NEO_AUTO_ENDPOINT,
@@ -373,18 +498,30 @@ async def test_shipyard_neo_auto_mode_reuses_configured_token(monkeypatch):
 @pytest.mark.parametrize(
     "endpoint_value, access_token, expected_endpoint, expected_token",
     [
-        (None, "", SHIPYARD_NEO_AUTO_ENDPOINT, ""),
+        (None, "", DEFAULT_SHIPYARD_NEO_ENDPOINT, ""),
         (
             SHIPYARD_NEO_AUTO_ENDPOINT,
             "",
-            SHIPYARD_NEO_AUTO_ENDPOINT,
+            DEFAULT_SHIPYARD_NEO_ENDPOINT,
             "",
         ),
-        ("   ", "", SHIPYARD_NEO_AUTO_ENDPOINT, ""),
+        ("   ", "", DEFAULT_SHIPYARD_NEO_ENDPOINT, ""),
+        (
+            DEFAULT_SHIPYARD_NEO_ENDPOINT,
+            "",
+            DEFAULT_SHIPYARD_NEO_ENDPOINT,
+            "",
+        ),
         (
             SHIPYARD_NEO_AUTO_ENDPOINT,
             "pre-configured-token",
-            SHIPYARD_NEO_AUTO_ENDPOINT,
+            DEFAULT_SHIPYARD_NEO_ENDPOINT,
+            "pre-configured-token",
+        ),
+        (
+            DEFAULT_SHIPYARD_NEO_ENDPOINT,
+            "pre-configured-token",
+            DEFAULT_SHIPYARD_NEO_ENDPOINT,
             "pre-configured-token",
         ),
     ],

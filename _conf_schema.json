@@ -2,8 +2,8 @@
   "shipyard_neo_endpoint": {
     "description": "Shipyard Neo API 地址",
     "type": "string",
-    "default": "",
-    "hint": "Bay / Shipyard Neo 服务的 API 地址。"
+    "default": "http://127.0.0.1:8114",
+    "hint": "Bay / Shipyard Neo 服务的 API 地址。默认值会触发本机 Bay 自动启动。"
   },
   "shipyard_neo_access_token": {
     "description": "Shipyard Neo 访问令牌",

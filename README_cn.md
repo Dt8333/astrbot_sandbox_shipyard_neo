@@ -48,10 +48,12 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_shipyard_neo.git data/plu
 
 | 键名 | 说明 |
 | --- | --- |
-| `shipyard_neo_endpoint` | Bay / Shipyard Neo API 地址。 |
-| `shipyard_neo_access_token` | Bay API Key。留空时会尝试自动发现。 |
+| `shipyard_neo_endpoint` | Bay / Shipyard Neo API 地址，默认值为 `http://127.0.0.1:8114`。 |
+| `shipyard_neo_access_token` | Bay API Key。留空时，本机自动启动会生成新密钥；外部端点会尝试自动发现。 |
 | `shipyard_neo_profile` | 沙盒 profile，例如 `python-default`。 |
 | `shipyard_neo_ttl` | 沙盒 TTL，单位秒。 |
+
+如果 AstrBot 和 Bay 运行在同一个 Docker Compose 网络中，请把 `shipyard_neo_endpoint` 配成 Bay 服务名，并确保 AstrBot 能访问对应网络。
 
 自动发现凭据时会检查：
 

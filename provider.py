@@ -12,7 +12,11 @@ from astrbot.core.computer.booters.base import ComputerBooter
 from astrbot.core.star.context import Context
 
 from .booters import shipyard_neo as shipyard_neo_booter
-from .booters.shipyard_neo import SHIPYARD_NEO_AUTO_ENDPOINT, ShipyardNeoBooter
+from .booters.shipyard_neo import ShipyardNeoBooter
+from .booters.shipyard_neo_endpoint import (
+    is_shipyard_neo_auto_endpoint,
+    normalize_shipyard_neo_endpoint,
+)
 
 BootHook = Callable[[Context, str, str, dict], Awaitable[ComputerBooter]]
 
@@ -87,14 +91,14 @@ class ShipyardNeoSandboxProvider:
         raw_endpoint = merged.get("shipyard_neo_endpoint")
         if raw_endpoint is not None and not isinstance(raw_endpoint, str):
             raise TypeError("shipyard_neo_endpoint must be a string")
-        endpoint = raw_endpoint.strip() if isinstance(raw_endpoint, str) else ""
-        if not endpoint:
-            endpoint = SHIPYARD_NEO_AUTO_ENDPOINT
+        endpoint = normalize_shipyard_neo_endpoint(
+            raw_endpoint if isinstance(raw_endpoint, str) else None
+        )
         raw_token = merged.get("shipyard_neo_access_token")
         if raw_token is not None and not isinstance(raw_token, str):
             raise TypeError("shipyard_neo_access_token must be a string")
         token = raw_token.strip() if isinstance(raw_token, str) else ""
-        if not token and endpoint != SHIPYARD_NEO_AUTO_ENDPOINT:
+        if not token and not is_shipyard_neo_auto_endpoint(endpoint):
             token = _discover_bay_credentials(endpoint)
         return {
             "endpoint_url": endpoint,

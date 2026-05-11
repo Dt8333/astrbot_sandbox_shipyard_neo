@@ -48,10 +48,12 @@ Enable sandbox mode in AstrBot and select the `shipyard_neo` sandbox driver:
 
 | Key | Description |
 | --- | --- |
-| `shipyard_neo_endpoint` | Bay / Shipyard Neo API endpoint. |
-| `shipyard_neo_access_token` | Bay API key. If empty, the plugin tries to auto-discover it. |
+| `shipyard_neo_endpoint` | Bay / Shipyard Neo API endpoint. Defaults to `http://127.0.0.1:8114`. |
+| `shipyard_neo_access_token` | Bay API key. If empty, local auto-start generates one and external endpoints try auto-discovery. |
 | `shipyard_neo_profile` | Sandbox profile, for example `python-default`. |
 | `shipyard_neo_ttl` | Sandbox TTL in seconds. |
+
+If AstrBot and Bay run in the same Docker Compose network, set `shipyard_neo_endpoint` to the Bay service name and make sure AstrBot can reach that network.
 
 Credential auto-discovery checks:
 
