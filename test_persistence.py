@@ -281,6 +281,7 @@ def test_shipyard_neo_unregister_builtin_tools_uses_compatibility_fallback(
 
     classes_by_name = {"astrbot_execute_browser": FakeTool}
     names_by_class = {FakeTool: "astrbot_execute_browser"}
+    config_rules = {"astrbot_execute_browser": object()}
 
     monkeypatch.setattr(
         plugin_main.tool_registry,
@@ -312,12 +313,19 @@ def test_shipyard_neo_unregister_builtin_tools_uses_compatibility_fallback(
         names_by_class,
         raising=False,
     )
+    monkeypatch.setattr(
+        plugin_main.tool_registry,
+        "_BUILTIN_TOOL_CONFIG_RULES",
+        config_rules,
+        raising=False,
+    )
 
     removed = plugin_main._unregister_shipyard_neo_builtin_tools()
 
     assert removed == ["astrbot_execute_browser"]
     assert classes_by_name == {}
     assert names_by_class == {}
+    assert config_rules == {}
 
 
 @pytest.mark.asyncio
