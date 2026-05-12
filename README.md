@@ -76,7 +76,3 @@ Credential auto-discovery checks:
 - This plugin depends on a working Bay / Shipyard Neo deployment.
 - Browser behavior depends on the selected profile and upstream runtime support.
 - If you only need shell or file operations, classic Shipyard or BoxLite is usually lighter.
-
-## Repository
-
-- GitHub: https://github.com/zouyonghe/astrbot_sandbox_shipyard_neo

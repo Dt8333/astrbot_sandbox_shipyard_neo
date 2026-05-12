@@ -75,7 +75,3 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_shipyard_neo.git data/plu
 - 需要有效的 Bay API Key，或者能被自动发现。
 - 浏览器行为受 profile 和上游运行时支持情况影响。
 - 如果只需要 Shell 或文件操作，经典 Shipyard 或 BoxLite 通常更轻。
-
-## 仓库地址
-
-- GitHub: https://github.com/zouyonghe/astrbot_sandbox_shipyard_neo
