@@ -142,14 +142,14 @@ async def test_shipyard_neo_terminate_detaches_even_if_cleanup_fails(monkeypatch
     def fake_detach(provider_id):
         calls.append(("detach", provider_id))
 
-    def fake_unregister(module_prefix):
-        calls.append(("unregister", module_prefix))
+    def fake_unregister():
+        calls.append(("unregister", SHIPYARD_NEO_TOOL_MODULE_PREFIX))
         return ["astrbot_execute_browser"]
 
     monkeypatch.setattr(plugin_main, "cleanup_sandbox_provider", fake_cleanup)
     monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
     monkeypatch.setattr(
-        plugin_main, "unregister_builtin_tools_by_module_prefix", fake_unregister
+        plugin_main, "_unregister_shipyard_neo_builtin_tools", fake_unregister
     )
 
     plugin = plugin_main.ShipyardNeoSandboxRuntimePlugin.__new__(
@@ -180,14 +180,14 @@ async def test_shipyard_neo_terminate_detaches_on_successful_cleanup(monkeypatch
     def fake_detach(provider_id):
         calls.append(("detach", provider_id))
 
-    def fake_unregister(module_prefix):
-        calls.append(("unregister", module_prefix))
+    def fake_unregister():
+        calls.append(("unregister", SHIPYARD_NEO_TOOL_MODULE_PREFIX))
         return ["astrbot_execute_browser"]
 
     monkeypatch.setattr(plugin_main, "cleanup_sandbox_provider", fake_cleanup)
     monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
     monkeypatch.setattr(
-        plugin_main, "unregister_builtin_tools_by_module_prefix", fake_unregister
+        plugin_main, "_unregister_shipyard_neo_builtin_tools", fake_unregister
     )
 
     plugin = plugin_main.ShipyardNeoSandboxRuntimePlugin.__new__(
@@ -219,8 +219,8 @@ async def test_shipyard_neo_terminate_logs_unregister_failure_without_masking_cl
     def fake_detach(provider_id):
         calls.append(("detach", provider_id))
 
-    def fake_unregister(module_prefix):
-        calls.append(("unregister", module_prefix))
+    def fake_unregister():
+        calls.append(("unregister", SHIPYARD_NEO_TOOL_MODULE_PREFIX))
         raise RuntimeError("unregister failed")
 
     warnings = []
@@ -240,7 +240,7 @@ async def test_shipyard_neo_terminate_logs_unregister_failure_without_masking_cl
     monkeypatch.setattr(plugin_main, "cleanup_sandbox_provider", fake_cleanup)
     monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
     monkeypatch.setattr(
-        plugin_main, "unregister_builtin_tools_by_module_prefix", fake_unregister
+        plugin_main, "_unregister_shipyard_neo_builtin_tools", fake_unregister
     )
     monkeypatch.setattr(plugin_main.logger, "warning", fake_warning)
 
