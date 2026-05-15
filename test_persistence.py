@@ -872,6 +872,44 @@ def test_bay_manager_omits_empty_api_key_env():
     assert all(not entry.startswith("BAY_SECURITY__API_KEY=") for entry in env)
 
 
+@pytest.mark.asyncio
+async def test_shipyard_neo_provider_shortens_docker_unavailable_errors(monkeypatch):
+    class FakeBooter:
+        DEFAULT_PROFILE = "python-default"
+
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        async def boot(self, session_id):
+            raise RuntimeError(
+                "Failed to connect to Docker daemon. "
+                "Ensure Docker is installed and running, or configure an explicit Bay endpoint."
+            )
+
+    monkeypatch.setattr(provider_module, "ShipyardNeoBooter", FakeBooter)
+
+    provider = provider_module.ShipyardNeoSandboxProvider()
+    context = SimpleNamespace(
+        get_config=lambda umo: {"provider_settings": {"sandbox": {}}}
+    )
+    config = provider.build_create_config(context, "session-a")
+
+    with pytest.raises(
+        RuntimeError, match="^Docker is not installed or not running$"
+    ) as excinfo:
+        await provider.create_booter(context, "session-a", "neo-1", config)
+
+    cause = excinfo.value.__cause__
+    assert isinstance(cause, RuntimeError)
+    assert str(cause).startswith("Failed to connect to Docker daemon. ")
+
+
+def test_shipyard_neo_provider_does_not_overmatch_docker_errors():
+    assert not provider_module._is_docker_unavailable_error(
+        RuntimeError("Failed to create Docker network using /var/run/docker.sock")
+    )
+
+
 def test_bay_manager_includes_api_key_env_when_token_is_configured():
     from data.plugins.astrbot_sandbox_shipyard_neo.booters.bay_manager import (
         BayContainerManager,
