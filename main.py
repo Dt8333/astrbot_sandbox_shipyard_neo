@@ -10,7 +10,23 @@ from astrbot.core.computer.computer_client import (
 from astrbot.core.tools import registry as tool_registry
 
 from .provider import ShipyardNeoSandboxProvider
-from .tools.shipyard_neo import SHIPYARD_NEO_TOOL_MODULE_PREFIX
+from .tools.shipyard_neo import (
+    SHIPYARD_NEO_TOOL_MODULE_PREFIX,
+    AnnotateExecutionTool,
+    BrowserBatchExecTool,
+    BrowserExecTool,
+    CreateSkillCandidateTool,
+    CreateSkillPayloadTool,
+    EvaluateSkillCandidateTool,
+    GetExecutionHistoryTool,
+    GetSkillPayloadTool,
+    ListSkillCandidatesTool,
+    ListSkillReleasesTool,
+    PromoteSkillCandidateTool,
+    RollbackSkillReleaseTool,
+    RunBrowserSkillTool,
+    SyncSkillReleaseTool,
+)
 
 
 @register(
@@ -26,6 +42,7 @@ class ShipyardNeoSandboxRuntimePlugin(Star):
         register_sandbox_provider(
             self.provider,
             replace=True,
+            tools=_build_shipyard_neo_tools(),
         )
         tool_registry.register_builtin_tools_by_module_prefix(
             SHIPYARD_NEO_TOOL_MODULE_PREFIX
@@ -51,6 +68,25 @@ class ShipyardNeoSandboxRuntimePlugin(Star):
                 _finalize_shipyard_neo_provider(
                     provider_id, getattr(self, "context", None)
                 )
+
+
+def _build_shipyard_neo_tools():
+    return [
+        BrowserExecTool(),
+        BrowserBatchExecTool(),
+        RunBrowserSkillTool(),
+        GetExecutionHistoryTool(),
+        AnnotateExecutionTool(),
+        CreateSkillPayloadTool(),
+        GetSkillPayloadTool(),
+        CreateSkillCandidateTool(),
+        ListSkillCandidatesTool(),
+        EvaluateSkillCandidateTool(),
+        PromoteSkillCandidateTool(),
+        ListSkillReleasesTool(),
+        RollbackSkillReleaseTool(),
+        SyncSkillReleaseTool(),
+    ]
 
 
 def _finalize_shipyard_neo_provider(provider_id: str, context: Context | None) -> None:
