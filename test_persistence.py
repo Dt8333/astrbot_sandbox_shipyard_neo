@@ -937,8 +937,25 @@ def test_bay_manager_configures_pullable_default_profile_image():
     assert profiles[0]["id"] == "python-default"
     assert profiles[0]["image"] == DEFAULT_SHIP_RUNTIME_IMAGE
     assert profiles[0]["resources"] == {"cpus": 1.0, "memory": "1g"}
-    assert profiles[0]["capabilities"] == ["filesystem", "shell", "python"]
+    assert profiles[0]["capabilities"] == [
+        "filesystem",
+        "shell",
+        "python",
+        "browser",
+    ]
     assert profiles[0]["idle_timeout"] == 1800
+
+
+def test_shipyard_neo_browser_property_reports_missing_capability():
+    from data.plugins.astrbot_sandbox_shipyard_neo.booters.shipyard_neo import (
+        ShipyardNeoBooter,
+    )
+
+    booter = ShipyardNeoBooter(endpoint_url="https://example.com", access_token="token")
+    booter._sandbox = FakeReadySandbox(capabilities=["filesystem", "shell", "python"])
+
+    with pytest.raises(RuntimeError, match="does not include browser capability"):
+        booter.browser
 
 
 def test_bay_manager_detects_mismatched_existing_container_env():

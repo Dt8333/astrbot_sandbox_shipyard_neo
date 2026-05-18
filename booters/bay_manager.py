@@ -158,7 +158,7 @@ class BayContainerManager:
                 "id": "python-default",
                 "image": DEFAULT_SHIP_RUNTIME_IMAGE,
                 "resources": {"cpus": 1.0, "memory": "1g"},
-                "capabilities": ["filesystem", "shell", "python"],
+                "capabilities": ["filesystem", "shell", "python", "browser"],
                 "idle_timeout": 1800,
             }
         ]

@@ -702,6 +702,12 @@ class ShipyardNeoBooter(ComputerBooter):
     @property
     def browser(self) -> BrowserComponent:
         if self._browser is None:
+            caps = self.capabilities
+            if caps is not None and "browser" not in caps:
+                raise RuntimeError(
+                    "Current Shipyard Neo sandbox does not include browser capability. "
+                    "Use a Bay profile whose capabilities include 'browser'."
+                )
             raise RuntimeError("ShipyardNeoBooter is not initialized.")
         return self._browser
 
